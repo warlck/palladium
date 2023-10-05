@@ -16,9 +16,19 @@ func main() {
 }
 
 func run() error {
-	privateKey, err := crypto.GenerateKey()
+	// privateKey, err := crypto.GenerateKey()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// crypto.SaveECDSA("zblock/accounts/quincy.ecdsa", privateKey)
+
+	// Need to load the private key file for the configured beneficiary so the
+	// account can get credited with fees and tips.
+	path := fmt.Sprintf("%s%s.ecdsa", "zblock/accounts/", "quincy")
+	privateKey, err := crypto.LoadECDSA(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to load private key for node: %w", err)
 	}
 
 	address := crypto.PubkeyToAddress(privateKey.PublicKey).String()
