@@ -34,18 +34,20 @@ func run() error {
 	address := crypto.PubkeyToAddress(privateKey.PublicKey).String()
 	fmt.Println(address)
 
+	// =====================================================================
 	v := struct {
 		Name string
 	}{
 		Name: "Quincy",
 	}
 
-	data, err := json.Marshal(v)
+	data, err := stamp(v)
 	if err != nil {
-		return err
+		return fmt.Errorf("Stamp: %w", err)
 	}
 
 	txHash := crypto.Keccak256(data)
+	// =====================================================================
 
 	// Sign the hash with the private key to produce a signature.
 	sig, err := crypto.Sign(txHash, privateKey)
@@ -54,5 +56,35 @@ func run() error {
 	}
 
 	fmt.Println("SIG:", sig)
+
+	sigPublicKey, err := crypto.SigToPub(txHash, sig)
+	if err != nil {
+		return err
+	}
+
+	address = crypto.PubkeyToAddress(*sigPublicKey).String()
+	fmt.Println("address: ", address)
+
 	return nil
+}
+
+// stamp returns a hash of 32 bytes that represen ts this data with
+// the Palladium stamp embedded into the final hash.
+func stamp(value any) ([]byte, error) {
+
+	// Marshal the data.
+	v, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	// This stamp is used so signatures we produce when signing data
+	// are always unique to the Palladium blockchain.
+	stamp := []byte(fmt.Sprintf("\x19Palladium Signed Message:\n%d", len(v)))
+
+	// Hash the stamp and txHash together in a final 32 byte array
+	// that represents the data.
+	data := crypto.Keccak256(stamp, v)
+
+	return data, nil
 }
