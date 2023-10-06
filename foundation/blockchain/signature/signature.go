@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -93,6 +94,11 @@ func FromAddress(value any, v, r, s *big.Int) (string, error) {
 	return crypto.PubkeyToAddress(*publicKey).String(), nil
 }
 
+// SignatureString returns the signature as a string.
+func SignatureString(v, r, s *big.Int) string {
+	return hexutil.Encode(ToSignatureBytesWithPalladiumID(v, r, s))
+}
+
 // ToSignatureBytes converts the r, s, v values into a slice of bytes
 // with the removal of the PalladiumID.
 func ToSignatureBytes(v, r, s *big.Int) []byte {
@@ -107,6 +113,15 @@ func ToSignatureBytes(v, r, s *big.Int) []byte {
 	copy(sig[32:], sBytes)
 
 	sig[64] = byte(v.Uint64() - palladiumID)
+
+	return sig
+}
+
+// ToSignatureBytesWithPalladiumID converts the r, s, v values into a slice of bytes
+// keeping the Palladium id.
+func ToSignatureBytesWithPalladiumID(v, r, s *big.Int) []byte {
+	sig := ToSignatureBytes(v, r, s)
+	sig[64] = byte(v.Uint64())
 
 	return sig
 }
