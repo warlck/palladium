@@ -4,6 +4,7 @@ package signature
 
 import (
 	"crypto/ecdsa"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,12 +14,26 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+// ZeroHash represents a hash code of zeros.
+const ZeroHash string = "0x0000000000000000000000000000000000000000000000000000000000000000"
+
 // palladiumID is an arbitrary number for signing messages. This will make it
 // clear that the signature comes from the Palladium blockchain.
 // Ethereum and Bitcoin do this as well, but they use the value of 27.
 const palladiumID = 31
 
 // =============================================================================
+
+// Hash returns a unique string for the value.
+func Hash(value any) string {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return ZeroHash
+	}
+
+	hash := sha256.Sum256(data)
+	return hexutil.Encode(hash[:])
+}
 
 // Sign uses the specified private key to sign the data.
 func Sign(value any, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error) {
@@ -36,8 +51,8 @@ func Sign(value any, privateKey *ecdsa.PrivateKey) (v, r, s *big.Int, err error)
 	}
 
 	// Extract the bytes for the original public key.
-	publicKeyOrg := privateKey.Public()
-	publicKeyECDSA, ok := publicKeyOrg.(*ecdsa.PublicKey)
+	publicKeyOrig := privateKey.Public()
+	publicKeyECDSA, ok := publicKeyOrig.(*ecdsa.PublicKey)
 	if !ok {
 		return nil, nil, nil, errors.New("error casting public key to ECDSA")
 	}
@@ -74,6 +89,12 @@ func VerifySignature(v, r, s *big.Int) error {
 
 // FromAddress extracts the address for the account that signed the data.
 func FromAddress(value any, v, r, s *big.Int) (string, error) {
+
+	// NOTE: If the exact data for the given signature is not provided
+	// we will get the wrong address for this transaction. There is no
+	// way to check this on the code since we don't have a copy of the
+	// public key used. The public key is being extracted from the data
+	// and signature.
 
 	// Prepare the data for public key extraction.
 	data, err := stamp(value)
