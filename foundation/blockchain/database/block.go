@@ -1,6 +1,9 @@
 package database
 
-import "github.com/warlck/palladium/foundation/blockchain/merkle"
+import (
+	"github.com/warlck/palladium/foundation/blockchain/merkle"
+	"github.com/warlck/palladium/foundation/blockchain/signature"
+)
 
 // =============================================================================
 
@@ -9,6 +12,32 @@ type BlockData struct {
 	Hash   string      `json:"hash"`
 	Header BlockHeader `json:"block"`
 	Trxs   []BlockTx   `json:"trxns"`
+}
+
+// NewBlockData constructs block data from a block.
+func NewBlockData(block Block) BlockData {
+	blockData := BlockData{
+		Hash:   block.Hash(),
+		Header: block.Header,
+		Trxs:   block.MerkleTree.Values(),
+	}
+
+	return blockData
+}
+
+// ToBlock converts a storage block into a database block.
+func ToBlock(blockData BlockData) (Block, error) {
+	tree, err := merkle.NewTree(blockData.Trxs)
+	if err != nil {
+		return Block{}, err
+	}
+
+	block := Block{
+		Header:     blockData.Header,
+		MerkleTree: tree,
+	}
+
+	return block, nil
 }
 
 // =============================================================================
@@ -30,4 +59,24 @@ type BlockHeader struct {
 type Block struct {
 	Header     BlockHeader
 	MerkleTree *merkle.Tree[BlockTx]
+}
+
+// Hash returns the unique hash for the Block.
+func (b Block) Hash() string {
+	if b.Header.Number == 0 {
+		return signature.ZeroHash
+	}
+
+	// CORE NOTE: Hashing the block header and not the whole block so the blockchain
+	// can be cryptographically checked by only needing block headers and not full
+	// blocks with the transaction data. This will support the ability to have pruned
+	// nodes and light clients in the future.
+	// - A pruned node stores all the block headers, but only a small number of full
+	//   blocks (maybe the last 1000 blocks). This allows for full cryptographic
+	//   validation of blocks and transactions without all the extra storage.
+	// - A light client keeps block headers and just enough sufficient information
+	//   to follow the latest set of blocks being produced. The do not validate
+	//   blocks, but can prove a transaction is in a block.
+
+	return signature.Hash(b.Header)
 }
