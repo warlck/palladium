@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -14,7 +15,7 @@ import (
 )
 
 func main() {
-	if err := writeScratchBlock(); err != nil {
+	if err := readBlock(); err != nil {
 		log.Fatalln(err)
 	}
 
@@ -92,6 +93,32 @@ func stamp(value any) ([]byte, error) {
 	data := crypto.Keccak256(stamp, v)
 
 	return data, nil
+}
+
+func readBlock() error {
+	d, err := disk.New("zblock/testminer")
+	if err != nil {
+		return err
+	}
+
+	blockData, err := d.GetBlock(1)
+	if err != nil {
+		return err
+	}
+	fmt.Println(blockData)
+
+	block, err := database.ToBlock(blockData)
+	if err != nil {
+		return err
+	}
+
+	if blockData.Header.TrxRoot != block.MerkleTree.RootHex() {
+		return errors.New("merkle tree wrong")
+	}
+
+	fmt.Println("Merkle tree matches")
+
+	return nil
 }
 
 func writeScratchBlock() error {
