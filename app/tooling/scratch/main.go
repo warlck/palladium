@@ -18,6 +18,9 @@ func main() {
 	if err := readBlock(); err != nil {
 		log.Fatalln(err)
 	}
+	// if err := writeScratchBlock(); err != nil {
+	// 	log.Fatalln(err)
+	// }
 
 }
 

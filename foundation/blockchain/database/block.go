@@ -7,7 +7,7 @@ import (
 
 // =============================================================================
 
-// BlockData represents what can be serialized to disk and over the netwox“rk.
+// BlockData represents what can be serialized to disk and over the network.
 type BlockData struct {
 	Hash   string      `json:"hash"`
 	Header BlockHeader `json:"block"`

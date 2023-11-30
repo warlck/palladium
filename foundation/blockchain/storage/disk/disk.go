@@ -63,7 +63,7 @@ func (d *Disk) Write(blockData database.BlockData) error {
 // contents of the specified block by number.
 func (d *Disk) GetBlock(num uint64) (database.BlockData, error) {
 
-	// Open the block file for the specified number.
+	// Open the block file for the specifix1ed number.
 	f, err := os.OpenFile(d.getPath(num), os.O_RDONLY, 0600)
 	if err != nil {
 		return database.BlockData{}, err
