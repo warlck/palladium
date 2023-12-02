@@ -11,8 +11,12 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/warlck/palladium/app/services/node/handlers"
+	"github.com/warlck/palladium/foundation/blockchain/database"
 	"github.com/warlck/palladium/foundation/blockchain/genesis"
+	"github.com/warlck/palladium/foundation/blockchain/state"
+	"github.com/warlck/palladium/foundation/blockchain/storage/disk"
 	"github.com/warlck/palladium/foundation/logger"
 	"go.uber.org/zap"
 )
@@ -57,6 +61,13 @@ func run(log *zap.SugaredLogger) error {
 			PublicHost      string        `conf:"default:0.0.0.0:8080"`
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
+		State struct {
+			Beneficiary string `conf:"default:testminer"`
+			DBPath      string `conf:"default:zblock/testminer/"`
+		}
+		NameService struct {
+			Folder string `conf:"default:zblock/accounts/"`
+		}
 	}{
 		Version: conf.Version{
 			Build: build,
@@ -100,11 +111,47 @@ func run(log *zap.SugaredLogger) error {
 	// =========================================================================
 	// Blockchain Support
 
-	gen, err := genesis.Load()
+	// Need to load the private key file for the configured beneficiary so the
+	// account can get credited with fees and tips.
+	path := fmt.Sprintf("%s%s.ecdsa", cfg.NameService.Folder, cfg.State.Beneficiary)
+	privateKey, err := crypto.LoadECDSA(path)
+	if err != nil {
+		return fmt.Errorf("unable to load private key for node: %w", err)
+	}
+
+	// The blockchain packages accept a function of this signature to allow the
+	// application to log.
+	ev := func(v string, args ...any) {
+		const websocketPrefix = "viewer:"
+
+		s := fmt.Sprintf(v, args...)
+		log.Infow(s, "traceid", "00000000-0000-0000-0000-000000000000")
+
+	}
+
+	genesis, err := genesis.Load()
 	if err != nil {
 		return fmt.Errorf("genesis load: %w", err)
 	}
-	log.Infow("startup", "gen", gen)
+
+	// Construct the use of disk storage.
+	storage, err := disk.New(cfg.State.DBPath)
+	if err != nil {
+		return err
+	}
+
+	// The state value represents the blockchain node and manages the blockchain
+	// database and provides an API for application support.
+	state, err := state.New(state.Config{
+		BeneficiaryID: database.PublicKeyToAccountID(privateKey.PublicKey),
+		Host:          cfg.Web.PrivateHost,
+		Storage:       storage,
+		Genesis:       genesis,
+		EvHandler:     ev,
+	})
+	if err != nil {
+		return err
+	}
 
 	// =========================================================================
 	// Service Start/Stop Support
