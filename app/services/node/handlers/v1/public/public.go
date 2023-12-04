@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/docker/docker/daemon/events"
-	"github.com/gorilla/websocket"
+	v1 "github.com/warlck/palladium/business/web/v1"
 	"github.com/warlck/palladium/foundation/blockchain/database"
+	"github.com/warlck/palladium/foundation/blockchain/state"
+	"github.com/warlck/palladium/foundation/nameservice"
 	"github.com/warlck/palladium/foundation/web"
 	"go.uber.org/zap"
 )
@@ -16,8 +17,7 @@ import (
 type Handlers struct {
 	Log   *zap.SugaredLogger
 	State *state.State
-	WS    websocket.Upgrader
-	Evts  *events.Events
+	NS    *nameservice.NameService
 }
 
 // SubmitWalletTransaction adds new transactions to the mempool.

@@ -9,6 +9,10 @@ import (
 	"os"
 
 	"github.com/warlck/palladium/app/services/node/handlers/debug/checkgrp"
+	v1 "github.com/warlck/palladium/app/services/node/handlers/v1"
+	"github.com/warlck/palladium/business/web/v1/mid"
+	"github.com/warlck/palladium/foundation/blockchain/state"
+	"github.com/warlck/palladium/foundation/nameservice"
 	"github.com/warlck/palladium/foundation/web"
 	"go.uber.org/zap"
 )
@@ -17,6 +21,8 @@ import (
 type MuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
+	State    *state.State
+	NS       *nameservice.NameService
 }
 
 // PublicMux constructs a http.Handler with all application routes defined.
@@ -25,6 +31,10 @@ func PublicMux(cfg MuxConfig) http.Handler {
 	// Construct the web.App which holds all routes as well as common Middleware.
 	app := web.NewApp(
 		cfg.Shutdown,
+		mid.Logger(cfg.Log),
+		mid.Errors(cfg.Log),
+		mid.Cors("*"),
+		mid.Panics(),
 	)
 
 	// Accept CORS 'OPTIONS' preflight requests if config has been provided.
@@ -33,7 +43,13 @@ func PublicMux(cfg MuxConfig) http.Handler {
 	h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
-	app.Handle(http.MethodOptions, "", "/*", h)
+	app.Handle(http.MethodOptions, "", "/*", h, mid.Cors("*"))
+	// Load the v1 routes.
+	v1.PublicRoutes(app, v1.Config{
+		Log:   cfg.Log,
+		State: cfg.State,
+		NS:    cfg.NS,
+	})
 
 	return app
 }
@@ -52,7 +68,7 @@ func PrivateMux(cfg MuxConfig) http.Handler {
 	h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return nil
 	}
-	app.Handle(http.MethodOptions, "", "/*", h)
+	app.Handle(http.MethodOptions, "", "/*", h, mid.Cors("*"))
 
 	return app
 }

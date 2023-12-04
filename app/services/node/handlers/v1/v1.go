@@ -5,8 +5,9 @@ package v1
 import (
 	"net/http"
 
-	"github.com/gorilla/websocket"
 	"github.com/warlck/palladium/app/services/node/handlers/v1/public"
+	"github.com/warlck/palladium/foundation/blockchain/state"
+	"github.com/warlck/palladium/foundation/nameservice"
 	"github.com/warlck/palladium/foundation/web"
 	"go.uber.org/zap"
 )
@@ -26,8 +27,6 @@ func PublicRoutes(app *web.App, cfg Config) {
 		Log:   cfg.Log,
 		State: cfg.State,
 		NS:    cfg.NS,
-		WS:    websocket.Upgrader{},
-		Evts:  cfg.Evts,
 	}
 
 	app.Handle(http.MethodPost, version, "/tx/submit", pbl.SubmitWalletTransaction)

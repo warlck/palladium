@@ -8,7 +8,6 @@ import (
 	"github.com/warlck/palladium/foundation/blockchain/database"
 	"github.com/warlck/palladium/foundation/blockchain/genesis"
 	"github.com/warlck/palladium/foundation/blockchain/mempool"
-	"github.com/warlck/palladium/foundation/blockchain/storage/disk"
 )
 
 // =============================================================================
@@ -64,14 +63,8 @@ func New(cfg Config) (*State, error) {
 		return nil, err
 	}
 
-	// Access the storage for the blockchain
-	storage, err := disk.New(cfg.DBPath)
-	if err != nil {
-		return nil, err
-	}
-
 	// Access the storage for the blockchain.
-	db, err := database.Newg(genesis, storage, ev)
+	db, err := database.New(genesis, cfg.Storage, ev)
 	if err != nil {
 		return nil, err
 	}
@@ -86,15 +79,12 @@ func New(cfg Config) (*State, error) {
 	state := State{
 		beneficiaryID: cfg.BeneficiaryID,
 		host:          cfg.Host,
-		storage:       storage,
 		evHandler:     ev,
-		consensus:     cfg.Consensus,
 		allowMining:   true,
 
-		knownPeers: cfg.KnownPeers,
-		genesis:    cfg.Genesis,
-		mempool:    mempool,
-		db:         db,
+		genesis: cfg.Genesis,
+		mempool: mempool,
+		db:      db,
 	}
 
 	// The Worker is not set here. The call to worker.Run will assign itself
