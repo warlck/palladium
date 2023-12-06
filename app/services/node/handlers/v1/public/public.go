@@ -83,3 +83,14 @@ func (h Handlers) Mempool(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	return web.Respond(ctx, w, trxs, http.StatusOK)
 }
+
+// StartMining will allow us to trigger mining event
+func (h *Handlers) StartMining(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	status := struct {
+		Status string
+	}{
+		Status: "OK",
+	}
+
+	return web.Respond(ctx, w, status, http.StatusOK)
+}
