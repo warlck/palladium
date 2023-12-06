@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -15,13 +14,14 @@ import (
 )
 
 func main() {
-	if err := readBlock(); err != nil {
-		log.Fatalln(err)
-	}
+	// if err := readBlock(); err != nil {
+	// 	log.Fatalln(err)
+	// }
 	// if err := writeScratchBlock(); err != nil {
 	// 	log.Fatalln(err)
 	// }
 
+	run()
 }
 
 func run() error {
@@ -34,7 +34,7 @@ func run() error {
 
 	// Need to load the private key file for the configured beneficiary so the
 	// account can get credited with fees and tips.
-	path := fmt.Sprintf("%s%s.ecdsa", "zblock/accounts/", "quincy")
+	path := fmt.Sprintf("%s%s.ecdsa", "zblock/accounts/", "adam")
 	privateKey, err := crypto.LoadECDSA(path)
 	if err != nil {
 		return fmt.Errorf("unable to load private key for node: %w", err)
