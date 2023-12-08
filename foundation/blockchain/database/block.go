@@ -165,8 +165,6 @@ func (b *Block) performPOW(ctx context.Context, ev func(v string, args ...any)) 
 
 		return nil
 	}
-
-	return nil
 }
 
 // Hash returns the unique hash for the Block.

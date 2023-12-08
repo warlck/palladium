@@ -12,9 +12,25 @@ import (
 
 // =============================================================================
 
+// The set of different consensus protocols that can be used.
+const (
+	ConsensusPOW = "POW"
+	ConsensusPOA = "POA"
+)
+
+// =============================================================================
+
 // EventHandler defines a function that is called when events
 // occur in the processing of persisting blocks.
 type EventHandler func(v string, args ...any)
+
+// Worker interface represents the behavior required to be implemented by any
+// package providing support for mining, peer updates, and transaction sharing.
+type Worker interface {
+	Shutdown()
+	SignalStartMining()
+	SignalCancelMining()
+}
 
 // =============================================================================
 
@@ -43,6 +59,8 @@ type State struct {
 	genesis genesis.Genesis
 	mempool *mempool.Mempool
 	db      *database.Database
+
+	Worker Worker
 }
 
 // New constructs a new blockchain for data management.
@@ -93,9 +111,30 @@ func New(cfg Config) (*State, error) {
 	return &state, nil
 }
 
+// Shutdown cleanly brings the node down.
+func (s *State) Shutdown() error {
+	s.evHandler("state: shutdown: started")
+	defer s.evHandler("state: shutdown: completed")
+
+	// Make sure the database file is properly closed.
+	defer func() {
+		s.db.Close()
+	}()
+
+	// Stop all blockchain writing activity.
+	s.Worker.Shutdown()
+
+	return nil
+}
+
 // =============================================================================
 
 // Mempool returns a copy of the mempool.
 func (s *State) Mempool() []database.BlockTx {
 	return s.mempool.PickBest()
+}
+
+// MempoolLength returns the current length of the mempool.
+func (s *State) MempoolLength() int {
+	return s.mempool.Count()
 }

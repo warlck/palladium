@@ -17,6 +17,7 @@ import (
 	"github.com/warlck/palladium/foundation/blockchain/genesis"
 	"github.com/warlck/palladium/foundation/blockchain/state"
 	"github.com/warlck/palladium/foundation/blockchain/storage/disk"
+	"github.com/warlck/palladium/foundation/blockchain/worker.go"
 	"github.com/warlck/palladium/foundation/logger"
 	"github.com/warlck/palladium/foundation/nameservice"
 	"go.uber.org/zap"
@@ -168,6 +169,13 @@ func run(log *zap.SugaredLogger) error {
 	if err != nil {
 		return err
 	}
+
+	defer state.Shutdown()
+
+	// The worker package implements the different workflows such as mining,
+	// transaction peer sharing, and peer updates. The worker will register
+	// itself with the state.
+	worker.Run(state, ev)
 
 	// =========================================================================
 	// Service Start/Stop Support
