@@ -70,6 +70,9 @@ func (w *Worker) Shutdown() {
 	w.evHandler("worker: shutdown: started")
 	defer w.evHandler("worker: shutdown: completed")
 
+	w.evHandler("worker: shutdown: signal cancel mining")
+	w.SignalCancelMining()
+
 	w.evHandler("worker: shutdown: terminate goroutines")
 	close(w.shut)
 	w.wg.Wait()

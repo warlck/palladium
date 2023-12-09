@@ -20,6 +20,9 @@ scratch:
 
 up:
 	go run app/services/node/main.go -race | go run app/tooling/logfmt/main.go
+	
+down:
+	kill -INT `ps -x | grep "main -race" | grep -v grep | sed -n 1,1p | cut -c1-5`
 
 
 
