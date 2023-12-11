@@ -11,6 +11,7 @@ SHELL := /bin/bash
 # curl -il -X GET http://localhost:9080/v1/node/block/list/1/latest
 # curl -il -X GET http://localhost:8080/v1/tx/uncommitted/list
 # curl -il -X GET http://localhost:8080/v1/start/mining
+# curl -il -X GET http://localhost:8080/v1/accounts/list
 # ==============================================================================
 # Local support
 
@@ -26,6 +27,10 @@ down:
 
 
 
+accounts:
+	curl -il -X GET http://localhost:8080/v1/accounts/list
+
+
 tidy:
 	go mod tidy
 	go mod vendor
@@ -35,8 +40,6 @@ deps-upgrade:
 	go get -u -v ./...
 	go mod tidy
 	go mod vendor
-
-
 
 
 load:

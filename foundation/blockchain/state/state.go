@@ -138,3 +138,13 @@ func (s *State) Mempool() []database.BlockTx {
 func (s *State) MempoolLength() int {
 	return s.mempool.Count()
 }
+
+// Accounts returns a copy of the database accounts.
+func (s *State) Accounts() map[database.AccountID]database.Account {
+	return s.db.Copy()
+}
+
+// LatestBlock returns a copy the current latest block.
+func (s *State) LatestBlock() database.Block {
+	return s.db.LatestBlock()
+}

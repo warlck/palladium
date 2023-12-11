@@ -3,6 +3,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -61,6 +62,31 @@ func (db *Database) LatestBlock() Block {
 	defer db.mu.RUnlock()
 
 	return db.latestBlock
+}
+
+// Query retrieves an account from the database.
+func (db *Database) Query(accountID AccountID) (Account, error) {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	acount, exists := db.accounts[accountID]
+	if !exists {
+		return Account{}, errors.New("account does not exist")
+	}
+
+	return acount, nil
+}
+
+// Copy makes a copy of the current accounts in the database.
+func (db *Database) Copy() map[AccountID]Account {
+	db.mu.RLock()
+	defer db.mu.RUnlock()
+
+	accounts := make(map[AccountID]Account)
+	for accountID, account := range db.accounts {
+		accounts[accountID] = account
+	}
+	return accounts
 }
 
 // HashState returns a hash based on the contents of the accounts and

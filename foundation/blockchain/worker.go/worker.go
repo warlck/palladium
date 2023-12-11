@@ -33,6 +33,9 @@ func Run(st *state.State, evHandler state.EventHandler) {
 
 	st.Worker = &w
 
+	// Update this node before starting any support G's.
+	w.Sync()
+
 	// Load the set of operations we need to run.
 	operations := []func(){
 		w.miningOperations,
