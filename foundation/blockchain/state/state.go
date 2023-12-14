@@ -8,6 +8,7 @@ import (
 	"github.com/warlck/palladium/foundation/blockchain/database"
 	"github.com/warlck/palladium/foundation/blockchain/genesis"
 	"github.com/warlck/palladium/foundation/blockchain/mempool"
+	"github.com/warlck/palladium/foundation/blockchain/peer"
 )
 
 // =============================================================================
@@ -44,6 +45,7 @@ type Config struct {
 	SelectStrategy string
 	EvHandler      EventHandler
 	Consensus      string
+	KnownPeers     *peer.PeerSet
 }
 
 // State manages the blockchain database.
@@ -56,9 +58,10 @@ type State struct {
 	host          string
 	evHandler     EventHandler
 
-	genesis genesis.Genesis
-	mempool *mempool.Mempool
-	db      *database.Database
+	genesis    genesis.Genesis
+	mempool    *mempool.Mempool
+	db         *database.Database
+	knownPeers *peer.PeerSet
 
 	Worker Worker
 }
@@ -100,9 +103,10 @@ func New(cfg Config) (*State, error) {
 		evHandler:     ev,
 		allowMining:   true,
 
-		genesis: cfg.Genesis,
-		mempool: mempool,
-		db:      db,
+		knownPeers: cfg.KnownPeers,
+		genesis:    cfg.Genesis,
+		mempool:    mempool,
+		db:         db,
 	}
 
 	// The Worker is not set here. The call to worker.Run will assign itself
@@ -147,4 +151,27 @@ func (s *State) Accounts() map[database.AccountID]database.Account {
 // LatestBlock returns a copy the current latest block.
 func (s *State) LatestBlock() database.Block {
 	return s.db.LatestBlock()
+}
+
+// KnownExternalPeers retrieves a copy of the known peer list without
+// including this node.
+func (s *State) KnownExternalPeers() []peer.Peer {
+	return s.knownPeers.Copy(s.host)
+}
+
+// RemoveKnownPeer provides the ability to remove a peer from
+// the known peer list.
+func (s *State) RemoveKnownPeer(peer peer.Peer) {
+	s.knownPeers.Remove(peer)
+}
+
+// AddKnownPeer provides the ability to add a new peer to
+// the known peer list.
+func (s *State) AddKnownPeer(peer peer.Peer) bool {
+	return s.knownPeers.Add(peer)
+}
+
+// Host returns a copy of host information.
+func (s *State) Host() string {
+	return s.host
 }

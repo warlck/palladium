@@ -15,6 +15,7 @@ import (
 	"github.com/warlck/palladium/app/services/node/handlers"
 	"github.com/warlck/palladium/foundation/blockchain/database"
 	"github.com/warlck/palladium/foundation/blockchain/genesis"
+	"github.com/warlck/palladium/foundation/blockchain/peer"
 	"github.com/warlck/palladium/foundation/blockchain/state"
 	"github.com/warlck/palladium/foundation/blockchain/storage/disk"
 	"github.com/warlck/palladium/foundation/blockchain/worker.go"
@@ -64,8 +65,9 @@ func run(log *zap.SugaredLogger) error {
 			PrivateHost     string        `conf:"default:0.0.0.0:9080"`
 		}
 		State struct {
-			Beneficiary string `conf:"default:testminer"`
-			DBPath      string `conf:"default:zblock/testminer/"`
+			Beneficiary string   `conf:"default:testminer"`
+			DBPath      string   `conf:"default:zblock/testminer/"`
+			OriginPeers []string `conf:"default:0.0.0.0:9080"` //
 		}
 		NameService struct {
 			Folder string `conf:"default:zblock/accounts/"`
@@ -136,6 +138,14 @@ func run(log *zap.SugaredLogger) error {
 		return fmt.Errorf("unable to load private key for node: %w", err)
 	}
 
+	// A peer set is a collection of known nodes in the network so transactions
+	// and blocks can be shared.
+	peerSet := peer.NewPeerSet()
+	for _, host := range cfg.State.OriginPeers {
+		peerSet.Add(peer.New(host))
+	}
+	peerSet.Add(peer.New(cfg.Web.PrivateHost))
+
 	// The blockchain packages accept a function of this signature to allow the
 	// application to log.
 	ev := func(v string, args ...any) {
@@ -164,6 +174,7 @@ func run(log *zap.SugaredLogger) error {
 		Host:          cfg.Web.PrivateHost,
 		Storage:       storage,
 		Genesis:       genesis,
+		KnownPeers:    peerSet,
 		EvHandler:     ev,
 	})
 	if err != nil {
