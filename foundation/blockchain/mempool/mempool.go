@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"strings"
 	"sync"
 
@@ -104,6 +105,7 @@ func (mp *Mempool) PickBest(howMany ...uint16) []database.BlockTx {
 		txs = append(txs, tx)
 	}
 
+	sort.Sort(byNonce(txs))
 	return txs
 }
 
@@ -117,4 +119,25 @@ func mapKey(tx database.BlockTx) (string, error) {
 // accountFromMapKey extracts the account information from the mapkey.
 func accountFromMapKey(key string) database.AccountID {
 	return database.AccountID(strings.Split(key, ":")[0])
+}
+
+// =============================================================================
+
+// byNonce provides sorting support by the transaction id value.
+type byNonce []database.BlockTx
+
+// Len returns the number of transactions in the list.
+func (bn byNonce) Len() int {
+	return len(bn)
+}
+
+// Less helps to sort the list by nonce in ascending order to keep the
+// transactions in the right order of processing.
+func (bn byNonce) Less(i, j int) bool {
+	return bn[i].Nonce < bn[j].Nonce
+}
+
+// Swap moves transactions in the order of the nonce value.
+func (bn byNonce) Swap(i, j int) {
+	bn[i], bn[j] = bn[j], bn[i]
 }
