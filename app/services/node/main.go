@@ -18,7 +18,7 @@ import (
 	"github.com/warlck/palladium/foundation/blockchain/peer"
 	"github.com/warlck/palladium/foundation/blockchain/state"
 	"github.com/warlck/palladium/foundation/blockchain/storage/disk"
-	"github.com/warlck/palladium/foundation/blockchain/worker.go"
+	"github.com/warlck/palladium/foundation/blockchain/worker"
 	"github.com/warlck/palladium/foundation/logger"
 	"github.com/warlck/palladium/foundation/nameservice"
 	"go.uber.org/zap"
@@ -237,6 +237,8 @@ func run(log *zap.SugaredLogger) error {
 	privateMux := handlers.PrivateMux(handlers.MuxConfig{
 		Shutdown: shutdown,
 		Log:      log,
+		NS:       ns,
+		State:    state,
 	})
 
 	// Construct a server to service the requests against the mux.

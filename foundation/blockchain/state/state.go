@@ -175,3 +175,8 @@ func (s *State) AddKnownPeer(peer peer.Peer) bool {
 func (s *State) Host() string {
 	return s.host
 }
+
+// UpsertMempool adds a new transaction to the mempool.
+func (s *State) UpsertMempool(tx database.BlockTx) error {
+	return s.mempool.Upsert(tx)
+}
